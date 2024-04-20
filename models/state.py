@@ -1,42 +1,34 @@
 #!/usr/bin/python3
-"""This is the state class"""
-
+""" holds class State"""
 import models
-from models.base_model import BaseModel
-from models.base_model import Base
+from models.base_model import BaseModel, Base
+from models.city import City
 from os import getenv
-from sqlalchemy import Column, String
+import sqlalchemy
+from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.orm import relationship
 
 
 class State(BaseModel, Base):
-    """This is the class for State
-    Attributes:
-        state_id: The state id
-        name: input name
-    """
+    """Representation of state """
+    if models.storage_t == "db":
+        __tablename__ = 'states'
+        name = Column(String(128), nullable=False)
+        cities = relationship("City", backref="state")
+    else:
+        name = ""
 
-    """This init method allows the class to access BaseModel's attributes"""
+    def __init__(self, *args, **kwargs):
+        """initializes state"""
+        super().__init__(*args, **kwargs)
 
-    __tablename__ = "states"
-    name = Column(String(128), nullable=False)
-    cities = relationship("City", backref="state", cascade="all, delete")
-
-    if getenv("HBNB_TYPE_STORAGE", None) != "db":
-
+    if models.storage_t != "db":
         @property
         def cities(self):
-            """
-            Returns the list of City instances with state_id equals to the
-            current State.id as private
-            """
-            c_list = []
-
-            all_cities = models.storage.all("City")
-
-            for key, value in all_cities.items():
-
-                if value.__dict__.get('state_id') == self.id:
-                    c_list.append(value)
-
-            return (c_list)
+            """getter for list of city instances related to the state"""
+            city_list = []
+            all_cities = models.storage.all(City)
+            for city in all_cities.values():
+                if city.state_id == self.id:
+                    city_list.append(city)
+            return city_list
